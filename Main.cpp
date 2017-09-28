@@ -7,7 +7,7 @@
 
 #pragma warning(disable : 4996)
 
-#define LOG_ON TRUE
+#define LOG_ON FALSE
 
 #ifdef _DEBUG
 #pragma comment (lib, "oraocci12d.lib")
@@ -22,7 +22,7 @@ void GetLastErrorMessage(DWORD dwErrCode, char *szErrText)
 	LPSTR szBuff = nullptr;
 	size_t size = FormatMessageA(FORMAT_MESSAGE_ALLOCATE_BUFFER | FORMAT_MESSAGE_FROM_SYSTEM | FORMAT_MESSAGE_IGNORE_INSERTS,
 		NULL, dwErrCode, MAKELANGID(LANG_NEUTRAL, SUBLANG_DEFAULT), (LPSTR)&szBuff, 0, NULL);
-	sprintf(szErrText, "\t==>Error\n\tCode = %d(0x%x)   Message:%s", dwErrCode, dwErrCode, szBuff);
+	sprintf(szErrText, "\t==>Error\r\n\tCode = %d(0x%x)   Message:%s", dwErrCode, dwErrCode, szBuff);
 
 	LocalFree(szBuff);
 }
@@ -80,7 +80,7 @@ int WriteLog(char *szMessage)
 int ReadPath()
 {
 #if LOG_ON
-	WriteLog("\t===>LOG\n\t\t---===ReadPath===---\n");
+	WriteLog("\t===>LOG\r\n\t\t---===ReadPath===---\r\n");
 #endif
 	int nFolderPathLength = 0;
 	char szFolderPath[BUFF_SIZE] = { 0 };
@@ -102,14 +102,14 @@ int ReadPath()
 	tinyxml2::XMLError xmlErr = pXmlDoc.LoadFile(szFullXmlFilePath);
 	if (xmlErr != tinyxml2::XML_SUCCESS)
 	{
-		WriteLog("Error >> path.xml not opened\n");
+		WriteLog("Error >> path.xml not opened\r\n");
 		return -1;
 	}
 
 	tinyxml2::XMLElement *pXmlElement = pXmlDoc.FirstChildElement("path")->FirstChildElement("Region");
 	if (pXmlElement == nullptr)
 	{
-		WriteLog("Error >> FirstChild not opened\n");
+		WriteLog("Error >> FirstChild not opened\r\n");
 		return -1;
 	}
 
@@ -121,14 +121,14 @@ int ReadPath()
 		szId = (char *)malloc(BIG_BUFF_SIZE);
 		if (szId == nullptr)
 		{
-			WriteLog("\t===> Error\n\tNot enough memory for szId");
+			WriteLog("\t===> Error\r\n\tNot enough memory for szId");
 			return -1;
 		}
 		strset(szId, 0);
 		szFolder = (char *)malloc(BIG_BUFF_SIZE);
 		if (szFolder == nullptr)
 		{
-			WriteLog("\t===> Error\n\tNot enough memory for szFolder");
+			WriteLog("\t===> Error\r\n\tNot enough memory for szFolder");
 			return -1;
 		}
 		strset(szFolder, 0);
@@ -147,7 +147,7 @@ int ReadPath()
 int SearchFileinFolder(char *szFolder, char *szRegID)
 {
 #if LOG_ON
-	WriteLog("\t===>LOG\n\t\t---===SearchFileinFolder===---\n");
+	WriteLog("\t===>LOG\r\n\t\t---===SearchFileinFolder===---\r\n");
 #endif
 	char szMask[BIG_BUFF_SIZE] = { 0 };
 	char szFilePath[BIG_BUFF_SIZE] = { 0 };
@@ -184,7 +184,7 @@ int SearchFileinFolder(char *szFolder, char *szRegID)
 int ParseFile(char *szFilePath, char *szRegID)
 {
 #if LOG_ON
-	WriteLog("\t===>LOG\n\t\t---===ParseFile===---\n");
+	WriteLog("\t===>LOG\r\n\t\t---===ParseFile===---\r\n");
 #endif
 	int nTotalFiledComplete = 0;
 	string sStringFromFile;
@@ -194,7 +194,7 @@ int ParseFile(char *szFilePath, char *szRegID)
 	pPcInfo = (pc_info*)malloc(sizeof(pc_info));
 	if (pPcInfo == nullptr)
 	{
-		WriteLog("\t===> Error\n\tNot enough memory for pc_info\n");
+		WriteLog("\t===> Error\r\n\tNot enough memory for pc_info\r\n");
 		return -1;
 	}
 
@@ -203,12 +203,6 @@ int ParseFile(char *szFilePath, char *szRegID)
 	{
 		size_t pos;
 		
-		if (nTotalFiledComplete == 10)
-		{
-			strcpy_s(pPcInfo->RegionID, BUFF_SIZE, szRegID);
-			break;
-		}
-
 		pos = sStringFromFile.find("MAC_Addr=");
 		if (pos == 0)
 		{
@@ -236,7 +230,18 @@ int ParseFile(char *szFilePath, char *szRegID)
 		pos = sStringFromFile.find("IP_Addr=");
 		if (pos == 0)
 		{
-			strcpy_s(pPcInfo->IP_Addr, BUFF_SIZE, sStringFromFile.substr(pos + strlen("IP_Addr="), sStringFromFile.length() - strlen("IP_Addr=")).c_str());
+			size_t nSpace = 0;
+			char szTmp[BUFF_SIZE] = { 0 };
+			string sTmp = sStringFromFile.substr(pos + strlen("IP_Addr="), sStringFromFile.length() - strlen("IP_Addr="));
+			pos = sTmp.find(" ");
+			if (pos == string::npos)
+			{
+				strcpy_s(pPcInfo->IP_Addr, BUFF_SIZE, sStringFromFile.substr(strlen("IP_Addr="), sStringFromFile.length() - strlen("IP_Addr=")).c_str());
+			}
+			else
+			{
+				strcpy_s(pPcInfo->IP_Addr, BUFF_SIZE, sStringFromFile.substr(strlen("IP_Addr="), pos).c_str());
+			}
 			nTotalFiledComplete++;
 			continue;
 		}
@@ -289,10 +294,15 @@ int ParseFile(char *szFilePath, char *szRegID)
 			nTotalFiledComplete++;
 			continue;
 		}
+		if (nTotalFiledComplete == 10)
+		{	
+			break;
+		}
 	}
 	
 	if (nTotalFiledComplete == 10)
 	{
+		strcpy_s(pPcInfo->RegionID, BUFF_SIZE, szRegID);
 		strset(szLog, 0);
 		strset(szQuery, 0);
 		sprintf_s(szQuery, BIG_BUFF_SIZE, "begin tech_conf_parse_test ('%s', '%s', '%s', '%s', '%s', '%s', '%s', '%s', '%s', '%s', '%s');end;", pPcInfo->MAC_Addr, pPcInfo->System, pPcInfo->Computer_Name, pPcInfo->IP_Addr, 
@@ -311,12 +321,12 @@ int ParseFile(char *szFilePath, char *szRegID)
 				WriteLog(szError);
 			}
 		}
-		sprintf_s(szLog, BIG_BUFF_SIZE, "Parsing file : %s\n\tQuery string : %s\n", szFilePath, szQuery);
+		sprintf_s(szLog, BIG_BUFF_SIZE, "Parsing file : %s\r\n\tQuery string : %s\r\n", szFilePath, szQuery);
 	}
 	else
 	{
 		strset(szLog, 0);
-		sprintf_s(szLog, BIG_BUFF_SIZE, "Parsing file : %s\n\tNo data from file select\n", szFilePath);
+		sprintf_s(szLog, BIG_BUFF_SIZE, "Parsing file : %s\r\n\tNo data from file select\r\n", szFilePath);
 	}
 	WriteLog(szLog);
 
@@ -332,7 +342,7 @@ int ParseFile(char *szFilePath, char *szRegID)
 int CreateSession()
 {
 #if LOG_ON
-	WriteLog("\t===>LOG\n\t\t---===CreateSession===---\n");
+	WriteLog("\t===>LOG\r\n\t\t---===CreateSession===---\r\n");
 #endif
 	try
 	{
@@ -352,7 +362,7 @@ int CreateSession()
 void FreeMemory()
 {
 #if LOG_ON
-	WriteLog("\t===>LOG\n\t\t---===FreeMemory===---\n");
+	WriteLog("\t===>LOG\r\n\t\t---===FreeMemory===---\r\n");
 #endif
 	for (it_mapPathId = mapPathId.begin(); it_mapPathId != mapPathId.end(); ++it_mapPathId)
 	{
@@ -372,11 +382,11 @@ APIENTRY
 WinMain(_In_ HINSTANCE hInstance, _In_opt_ HINSTANCE hPrevInstance, _In_ LPSTR lpCmdLine, _In_ int nShowCmd)
 {
 	int nRet = 0;
-	WriteLog("----====BEGIN====----\n");
+	WriteLog("----====BEGIN====----\r\n");
 	nRet = CreateSession();
 	if(nRet < 0)
 	{
-		WriteLog("----====END====----\n\0");
+		WriteLog("----====END====----\r\n\0");
 		return nRet;
 	}
 	
@@ -410,7 +420,7 @@ WinMain(_In_ HINSTANCE hInstance, _In_opt_ HINSTANCE hPrevInstance, _In_ LPSTR l
 		
 	}
 	FreeMemory();
-	WriteLog("----====END====----\n\0");
+	WriteLog("----====END====----\r\n\0");
 
 	if (pStmt != nullptr)
 	{
