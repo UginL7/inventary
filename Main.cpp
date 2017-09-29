@@ -30,7 +30,6 @@ void GetLastErrorMessage(DWORD dwErrCode, char *szErrText)
 // Generation file name like this result_YYYY-MM-DD.log
 void GenerateFileName(char *szFileName, int nSize)
 {
-	char szTmp[10] = { 0 };
 	SYSTEMTIME Time;
 	GetSystemTime(&Time);
 	sprintf_s(szFileName, nSize, "result_%d_%.2d_%02d.log", Time.wYear, Time.wMonth, Time.wDay);
@@ -124,14 +123,15 @@ int ReadPath()
 			WriteLog("\t===> Error\r\n\tNot enough memory for szId");
 			return -1;
 		}
-		strset(szId, 0);
+		memset(szId, 0, BIG_BUFF_SIZE);
 		szFolder = (char *)malloc(BIG_BUFF_SIZE);
 		if (szFolder == nullptr)
 		{
+			free(szId);
 			WriteLog("\t===> Error\r\n\tNot enough memory for szFolder");
 			return -1;
 		}
-		strset(szFolder, 0);
+		memset(szFolder, 0, BIG_BUFF_SIZE);
 
 		strcpy_s(szFolder, BIG_BUFF_SIZE, pXmlElement->Attribute("folder_path"));
 		strcpy_s(szId, BIG_BUFF_SIZE, pXmlElement->Attribute("id"));
@@ -186,12 +186,12 @@ int ParseFile(char *szFilePath, char *szRegID)
 #if LOG_ON
 	WriteLog("\t===>LOG\r\n\t\t---===ParseFile===---\r\n");
 #endif
+	int nLength = 0;
 	int nTotalFiledComplete = 0;
 	string sStringFromFile;
 	ifstream fileToParse(szFilePath);
 
-	struct pc_info *pPcInfo = nullptr;
-	pPcInfo = (pc_info*)malloc(sizeof(pc_info));
+	struct pc_info *pPcInfo = (pc_info*)malloc(sizeof(pc_info));
 	if (pPcInfo == nullptr)
 	{
 		WriteLog("\t===> Error\r\n\tNot enough memory for pc_info\r\n");
@@ -206,7 +206,8 @@ int ParseFile(char *szFilePath, char *szRegID)
 		pos = sStringFromFile.find("MAC_Addr=");
 		if (pos == 0)
 		{
-			strcpy_s(pPcInfo->MAC_Addr, BUFF_SIZE, sStringFromFile.substr(pos + strlen("MAC_Addr="), sStringFromFile.length() - strlen("MAC_Addr=")).c_str());
+			nLength = strlen("MAC_Addr=");
+			strcpy_s(pPcInfo->MAC_Addr, BUFF_SIZE, sStringFromFile.substr(pos + nLength, sStringFromFile.length() - nLength).c_str());
 			nTotalFiledComplete++;
 			continue;
 		}
@@ -214,7 +215,8 @@ int ParseFile(char *szFilePath, char *szRegID)
 		pos = sStringFromFile.find("System=");
 		if (pos == 0)
 		{
-			strcpy_s(pPcInfo->System, BUFF_SIZE, sStringFromFile.substr(pos + strlen("System="), sStringFromFile.length() - strlen("System=")).c_str());
+			nLength = strlen("System=");
+			strcpy_s(pPcInfo->System, BUFF_SIZE, sStringFromFile.substr(pos + nLength, sStringFromFile.length() - nLength).c_str());
 			nTotalFiledComplete++;
 			continue;
 		}
@@ -222,7 +224,8 @@ int ParseFile(char *szFilePath, char *szRegID)
 		pos = sStringFromFile.find("Computer_Name=");
 		if (pos == 0)
 		{
-			strcpy_s(pPcInfo->Computer_Name, BUFF_SIZE, sStringFromFile.substr(pos + strlen("Computer_Name="), sStringFromFile.length() - strlen("Computer_Name=")).c_str());
+			nLength = strlen("Computer_Name=");
+			strcpy_s(pPcInfo->Computer_Name, BUFF_SIZE, sStringFromFile.substr(pos + nLength, sStringFromFile.length() - nLength).c_str());
 			nTotalFiledComplete++;
 			continue;
 		}
@@ -231,16 +234,16 @@ int ParseFile(char *szFilePath, char *szRegID)
 		if (pos == 0)
 		{
 			size_t nSpace = 0;
-			char szTmp[BUFF_SIZE] = { 0 };
-			string sTmp = sStringFromFile.substr(pos + strlen("IP_Addr="), sStringFromFile.length() - strlen("IP_Addr="));
+			nLength = strlen("IP_Addr=");
+			string sTmp = sStringFromFile.substr(pos + nLength, sStringFromFile.length() - nLength);
 			pos = sTmp.find(" ");
 			if (pos == string::npos)
 			{
-				strcpy_s(pPcInfo->IP_Addr, BUFF_SIZE, sStringFromFile.substr(strlen("IP_Addr="), sStringFromFile.length() - strlen("IP_Addr=")).c_str());
+				strcpy_s(pPcInfo->IP_Addr, BUFF_SIZE, sStringFromFile.substr(nLength, sStringFromFile.length() - nLength).c_str());
 			}
 			else
 			{
-				strcpy_s(pPcInfo->IP_Addr, BUFF_SIZE, sStringFromFile.substr(strlen("IP_Addr="), pos).c_str());
+				strcpy_s(pPcInfo->IP_Addr, BUFF_SIZE, sStringFromFile.substr(nLength, pos).c_str());
 			}
 			nTotalFiledComplete++;
 			continue;
@@ -249,7 +252,8 @@ int ParseFile(char *szFilePath, char *szRegID)
 		pos = sStringFromFile.find("Current_User_Name=");
 		if (pos == 0)
 		{
-			strcpy_s(pPcInfo->Current_User_Name, BUFF_SIZE, sStringFromFile.substr(pos + strlen("Current_User_Name="), sStringFromFile.length() - strlen("Current_User_Name=")).c_str());
+			nLength = strlen("Current_User_Name=");
+			strcpy_s(pPcInfo->Current_User_Name, BUFF_SIZE, sStringFromFile.substr(pos + nLength, sStringFromFile.length() - nLength).c_str());
 			nTotalFiledComplete++;
 			continue;
 		}
@@ -257,7 +261,8 @@ int ParseFile(char *szFilePath, char *szRegID)
 		pos = sStringFromFile.find("CPU=");
 		if (pos == 0)
 		{
-			strcpy_s(pPcInfo->CPU, BUFF_SIZE, sStringFromFile.substr(pos + strlen("CPU="), sStringFromFile.length() - strlen("CPU=")).c_str());
+			nLength = strlen("CPU=");
+			strcpy_s(pPcInfo->CPU, BUFF_SIZE, sStringFromFile.substr(pos + nLength, sStringFromFile.length() - nLength).c_str());
 			nTotalFiledComplete++;
 			continue;
 		}
@@ -266,7 +271,8 @@ int ParseFile(char *szFilePath, char *szRegID)
 		pos = sStringFromFile.find("CPU_Freq_in_MHz=");
 		if (pos == 0)
 		{
-			strcpy_s(pPcInfo->CPU_Freq_in_MHz, BUFF_SIZE, sStringFromFile.substr(pos + strlen("CPU_Freq_in_MHz="), sStringFromFile.length() - strlen("CPU_Freq_in_MHz=")).c_str());
+			nLength = strlen("CPU_Freq_in_MHz=");
+			strcpy_s(pPcInfo->CPU_Freq_in_MHz, BUFF_SIZE, sStringFromFile.substr(pos + nLength, sStringFromFile.length() - nLength).c_str());
 			nTotalFiledComplete++;
 			continue;
 		}
@@ -274,7 +280,8 @@ int ParseFile(char *szFilePath, char *szRegID)
 		pos = sStringFromFile.find("Memory_in_Mb=");
 		if (pos == 0)
 		{
-			strcpy_s(pPcInfo->Memory_in_Mb, BUFF_SIZE, sStringFromFile.substr(pos + strlen("Memory_in_Mb="), sStringFromFile.length() - strlen("Memory_in_Mb=")).c_str());
+			nLength = strlen("Memory_in_Mb=");
+			strcpy_s(pPcInfo->Memory_in_Mb, BUFF_SIZE, sStringFromFile.substr(pos + nLength, sStringFromFile.length() - nLength).c_str());
 			nTotalFiledComplete++;
 			continue;
 		}
@@ -282,7 +289,8 @@ int ParseFile(char *szFilePath, char *szRegID)
 		pos = sStringFromFile.find("Total_HDD_in_Mb=");
 		if (pos == 0)
 		{
-			strcpy_s(pPcInfo->Total_HDD_in_Mb, BUFF_SIZE, sStringFromFile.substr(pos + strlen("Total_HDD_in_Mb="), sStringFromFile.length() - strlen("Total_HDD_in_Mb=")).c_str());
+			nLength = strlen("Total_HDD_in_Mb=");
+			strcpy_s(pPcInfo->Total_HDD_in_Mb, BUFF_SIZE, sStringFromFile.substr(pos + nLength, sStringFromFile.length() - nLength).c_str());
 			nTotalFiledComplete++;
 			continue;
 		}
@@ -290,7 +298,8 @@ int ParseFile(char *szFilePath, char *szRegID)
 		pos = sStringFromFile.find("Record_Date=");
 		if (pos == 0)
 		{
-			strcpy_s(pPcInfo->Record_Date, BUFF_SIZE, sStringFromFile.substr(pos + strlen("Record_Date="), sStringFromFile.length() - strlen("Record_Date=")).c_str());
+			nLength = strlen("Record_Date=");
+			strcpy_s(pPcInfo->Record_Date, BUFF_SIZE, sStringFromFile.substr(pos + nLength, sStringFromFile.length() - nLength).c_str());
 			nTotalFiledComplete++;
 			continue;
 		}
@@ -314,10 +323,10 @@ int ParseFile(char *szFilePath, char *szRegID)
 			{				
 				pStmt->executeQuery(szQuery);					
 			}
-			catch (SQLException e)
+			catch (SQLException &e)
 			{
 				char szError[BIG_BUFF_SIZE] = { 0 };
-				sprintf_s(szError, BIG_BUFF_SIZE, "code: %d\t%s", e.getErrorCode(), e.getMessage());
+				sprintf_s(szError, BIG_BUFF_SIZE, "code: %d\t%s", e.getErrorCode(), e.getMessage().c_str());
 				WriteLog(szError);
 			}
 		}
@@ -350,10 +359,10 @@ int CreateSession()
 		pConn = pEnv->createConnection(DB_USER_NAME, DB_PASSWORD, DB_CONNECT_STRING);
 		pStmt = pConn->createStatement();
 	}
-	catch (SQLException e)
+	catch (SQLException &e)
 	{
 		char szError[BIG_BUFF_SIZE] = { 0 };
-		sprintf_s(szError, BIG_BUFF_SIZE, "code: %d\t%s", e.getErrorCode(), e.getMessage());
+		sprintf_s(szError, BIG_BUFF_SIZE, "code: %d\t%s", e.getErrorCode(), e.getMessage().c_str());
 		WriteLog(szError);
 	}
 	return 0;
@@ -375,6 +384,35 @@ void FreeMemory()
 			free(it_mapPathId->second);
 		}
 	}
+
+	if (pStmt != nullptr)
+	{
+		if (pConn != nullptr)
+		{
+			pConn->terminateStatement(pStmt);
+			if (pEnv != nullptr)
+			{
+				pEnv->terminateConnection(pConn);
+				Environment::terminateEnvironment(pEnv);
+			}
+		}
+	}
+}
+
+void StartStop(bool bStart)
+{
+	char szMessage[BUFF_SIZE] = { 0 };
+	SYSTEMTIME Time;
+	GetSystemTime(&Time);
+	if (bStart == true)
+	{
+		sprintf_s(szMessage, BUFF_SIZE, "----====START at %d-%.2d-%.2d %.2d:%.2d:%.2d START====----\r\n", Time.wYear, Time.wMonth, Time.wDay, Time.wHour, Time.wMinute, Time.wSecond);
+	}
+	else
+	{
+		sprintf_s(szMessage, BUFF_SIZE, "----====STOP at %d-%.2d-%.2d %.2d:%.2d:%.2d STOP====----\r\n\0", Time.wYear, Time.wMonth, Time.wDay, Time.wHour, Time.wMinute, Time.wSecond);
+	}
+	WriteLog(szMessage);
 }
 
 int
@@ -382,30 +420,19 @@ APIENTRY
 WinMain(_In_ HINSTANCE hInstance, _In_opt_ HINSTANCE hPrevInstance, _In_ LPSTR lpCmdLine, _In_ int nShowCmd)
 {
 	int nRet = 0;
-	WriteLog("----====BEGIN====----\r\n");
+	StartStop(true);
 	nRet = CreateSession();
 	if(nRet < 0)
 	{
-		WriteLog("----====END====----\r\n\0");
+		StartStop(false);
 		return nRet;
 	}
 	
 	nRet = ReadPath();
 	if (nRet < 0)
 	{
-		if (pStmt != nullptr)
-		{
-			pConn->terminateStatement(pStmt);
-		}
-		if (pConn != nullptr)
-		{
-			pEnv->terminateConnection(pConn);
-		}
-		if (pEnv != nullptr)
-		{
-			Environment::terminateEnvironment(pEnv);
-		}
 		FreeMemory();
+		StartStop(false);
 		CloseHandle(hLogFile);
 		return nRet;
 	}
@@ -420,20 +447,7 @@ WinMain(_In_ HINSTANCE hInstance, _In_opt_ HINSTANCE hPrevInstance, _In_ LPSTR l
 		
 	}
 	FreeMemory();
-	WriteLog("----====END====----\r\n\0");
-
-	if (pStmt != nullptr)
-	{
-		pConn->terminateStatement(pStmt);
-	}
-	if (pConn != nullptr)
-	{
-		pEnv->terminateConnection(pConn);
-	}
-	if (pEnv != nullptr)
-	{
-		Environment::terminateEnvironment(pEnv);
-	}
+	StartStop(false);
 	CloseHandle(hLogFile);
 	return 0;
 }
