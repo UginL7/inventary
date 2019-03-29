@@ -1,4 +1,5 @@
 <path>
+  <Server ip = "" name = "" user = "" pass = "" />
   <Region id = "801" folder_path = "D:\projects\application\Inventory\cfout\" />
   <Region id = "833" folder_path = "J:\ftp\ftp_0803\Invent\" />
   <Region id = "823" folder_path = "J:\ftp\ftp_0804\Invent\" />

@@ -105,7 +105,25 @@ int ReadPath()
 		return -1;
 	}
 
-	tinyxml2::XMLElement *pXmlElement = pXmlDoc.FirstChildElement("path")->FirstChildElement("Region");
+	tinyxml2::XMLElement *pXmlElement = pXmlDoc.FirstChildElement("path")->FirstChildElement("Server");
+	if (pXmlElement == nullptr)
+	{
+		WriteLog("Error >> FirstChild not opened\r\n");
+		return -1;
+	}
+	while (pXmlElement != nullptr)
+	{
+		strcpy_s(szDBUser, BUFF_SIZE, pXmlElement->Attribute("user"));
+		strcpy_s(szDBPass, BUFF_SIZE, pXmlElement->Attribute("pass"));
+
+		strcpy_s(szDBConnectionString, BUFF_SIZE, pXmlElement->Attribute("ip"));
+		strcpy_s(szDBConnectionString + strlen(szDBConnectionString), BUFF_SIZE - strlen(szDBConnectionString), ":1521/");
+		strcpy_s(szDBConnectionString + strlen(szDBConnectionString), BUFF_SIZE - strlen(szDBConnectionString), pXmlElement->Attribute("name"));
+
+		pXmlElement = pXmlElement->NextSiblingElement("Server");
+	}
+
+	pXmlElement = pXmlDoc.FirstChildElement("path")->FirstChildElement("Region");
 	if (pXmlElement == nullptr)
 	{
 		WriteLog("Error >> FirstChild not opened\r\n");
@@ -314,8 +332,14 @@ int ParseFile(char *szFilePath, char *szRegID)
 		strcpy_s(pPcInfo->RegionID, BUFF_SIZE, szRegID);
 		strset(szLog, 0);
 		strset(szQuery, 0);
-		sprintf_s(szQuery, BIG_BUFF_SIZE, "begin tech_conf_parse_test ('%s', '%s', '%s', '%s', '%s', '%s', '%s', '%s', '%s', '%s', '%s');end;", pPcInfo->MAC_Addr, pPcInfo->System, pPcInfo->Computer_Name, pPcInfo->IP_Addr, 
+#if _DEBUG
+		sprintf_s(szQuery, BIG_BUFF_SIZE, "begin tech_conf_parse_test ('%s', '%s', '%s', '%s', '%s', '%s', '%s', '%s', '%s', '%s', '%s');end;", pPcInfo->MAC_Addr, pPcInfo->System, pPcInfo->Computer_Name, pPcInfo->IP_Addr,
 			pPcInfo->Current_User_Name, pPcInfo->CPU, pPcInfo->CPU_Freq_in_MHz, pPcInfo->Memory_in_Mb, pPcInfo->Total_HDD_in_Mb, pPcInfo->Record_Date, pPcInfo->RegionID);
+#else
+		sprintf_s(szQuery, BIG_BUFF_SIZE, "begin tech_conf_parse ('%s', '%s', '%s', '%s', '%s', '%s', '%s', '%s', '%s', '%s', '%s');end;", pPcInfo->MAC_Addr, pPcInfo->System, pPcInfo->Computer_Name, pPcInfo->IP_Addr,
+			pPcInfo->Current_User_Name, pPcInfo->CPU, pPcInfo->CPU_Freq_in_MHz, pPcInfo->Memory_in_Mb, pPcInfo->Total_HDD_in_Mb, pPcInfo->Record_Date, pPcInfo->RegionID);
+#endif //_DEBUG
+		
 
 		if (pConn != nullptr)
 		{
@@ -356,7 +380,7 @@ int CreateSession()
 	try
 	{
 		pEnv = Environment::createEnvironment("CL8MSWIN1251", "CL8MSWIN1251", Environment::DEFAULT );
-		pConn = pEnv->createConnection(DB_USER_NAME, DB_PASSWORD, DB_CONNECT_STRING);
+		pConn = pEnv->createConnection(szDBUser, szDBPass, szDBConnectionString);
 		pStmt = pConn->createStatement();
 	}
 	catch (SQLException &e)
@@ -421,19 +445,20 @@ WinMain(_In_ HINSTANCE hInstance, _In_opt_ HINSTANCE hPrevInstance, _In_ LPSTR l
 {
 	int nRet = 0;
 	StartStop(true);
-	nRet = CreateSession();
-	if(nRet < 0)
-	{
-		StartStop(false);
-		return nRet;
-	}
-	
+	// <Server ip = "10.8.98.36" name = "region08" user = "work" pass = "works" />
 	nRet = ReadPath();
 	if (nRet < 0)
 	{
 		FreeMemory();
 		StartStop(false);
 		CloseHandle(hLogFile);
+		return nRet;
+	}
+
+	nRet = CreateSession();
+	if(nRet < 0)
+	{
+		StartStop(false);
 		return nRet;
 	}
 

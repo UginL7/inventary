@@ -12,10 +12,6 @@ using namespace oracle::occi;
 #define BIG_BUFF_SIZE 1024
 #define BUFF_SIZE 512
 
-#define DB_USER_NAME "work"
-#define DB_PASSWORD "works"
-#define DB_CONNECT_STRING "10.8.98.38:1521/region08"
-
 int WriteLog(char *szMessage);
 int ParseFile(char *szFilePath, char *szRegID);
 
@@ -46,6 +42,10 @@ map<char*, char*>::iterator it_mapPathId;
 char szLog[BIG_BUFF_SIZE] = { 0 };
 // String to send query to DB
 char szQuery[BIG_BUFF_SIZE] = { 0 };
+// Connection string to DB
+char szDBConnectionString[BUFF_SIZE] = { 0 };
+char szDBUser[BUFF_SIZE] = { 0 };
+char szDBPass[BUFF_SIZE] = { 0 };
 HANDLE hLogFile = NULL;
 // Work with DB
 Environment* pEnv = nullptr;
